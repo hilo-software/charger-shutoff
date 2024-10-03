@@ -22,6 +22,7 @@ import bisect
 
 LOG_FILE = "shutoff_plug.log"
 CUTOFF_POWER = 3.0
+PROBE_INTERVAL_SECS = 5 * 60
 
 log_file = LOG_FILE
 logger = None
@@ -58,6 +59,7 @@ async def main_loop(target_plug: str) -> bool:
         return False
     logger.info(f"plug: {target_plug}, power: {plug_found.emeter_realtime.power}")
     while is_charging(plug_found):
+        await asyncio.sleep(PROBE_INTERVAL_SECS)
         await plug_found.update()
     await plug_found.turn_off()
     await plug_found.update()
