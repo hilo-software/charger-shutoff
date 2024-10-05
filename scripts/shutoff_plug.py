@@ -33,7 +33,7 @@ def fn_name():
 
 async def init(target_plug: str) -> SmartDevice:
     '''
-    async function.  Uses kasa library to discover all devices.
+    async function.  Uses kasa library to discover and find target device matching target_plug alias.
 
     Returns:
         True if plug is found
