@@ -23,6 +23,7 @@ import bisect
 LOG_FILE = "shutoff_plug.log"
 CUTOFF_POWER = 3.0
 PROBE_INTERVAL_SECS = 5 * 60
+PLUG_SETTLE_TIME_SECS = 10
 
 log_file = LOG_FILE
 logger = None
@@ -42,8 +43,19 @@ async def init(target_plug: str) -> SmartDevice:
     for smart_device in found.values():
         await smart_device.update()
         if smart_device.alias == target_plug:
+            if not smart_device.is_on:
+                if not await turn_on(smart_device):
+                    return None
+                logger.info(f"plug: was off, now successfully turned on so we delay {PLUG_SETTLE_TIME_SECS} seconds to allow power to settle")
+                await asyncio.sleep(PLUG_SETTLE_TIME_SECS)
+                await smart_device.update()
             return smart_device
     return None
+
+async def turn_on(plug: SmartDevice) -> bool:
+    await plug.turn_on()
+    await plug.update()
+    return plug.is_on
 
 def get_power(plug: SmartDevice) -> float:
     return plug.emeter_realtime.power
