@@ -28,6 +28,7 @@ PLUG_SETTLE_TIME_SECS = 10
 log_file = LOG_FILE
 logger = None
 plug: SmartDevice = None
+auto_on: bool = False
 
 def fn_name():
     return inspect.currentframe().f_back.f_code.co_name
@@ -39,11 +40,12 @@ async def init(target_plug: str) -> SmartDevice:
     Returns:
         True if plug is found
     '''
+    global auto_on
     found = await Discover.discover()
     for smart_device in found.values():
         await smart_device.update()
         if smart_device.alias == target_plug:
-            if not smart_device.is_on:
+            if auto_on and not smart_device.is_on:
                 if not await turn_on(smart_device):
                     return None
                 logger.info(f"plug: was off, now successfully turned on so we delay {PLUG_SETTLE_TIME_SECS} seconds to allow power to settle")
@@ -143,11 +145,15 @@ def init_argparse() -> argparse.ArgumentParser:
         action='store_true',
         help='reduces logging'
     )
+    parser.add_argument(
+        '-a', '--auto_on', action="store_true",
+        help='turn on plug at start is not yet on'
+    )
     return parser
 
 
 def main() -> None:
-    global log_file, logger
+    global log_file, logger, auto_on
 
     parser = init_argparse()
     args = parser.parse_args()
@@ -155,6 +161,9 @@ def main() -> None:
     # set up default logging
     if args.log_file_name != None:
         log_file = args.log_file_name
+    # set auto_on if present
+    if args.auto_on:
+        auto_on = args.auto_on
 
     logger = init_logging(log_file)
 
