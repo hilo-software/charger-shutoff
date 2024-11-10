@@ -14,13 +14,22 @@
 ## How it works
 The script looks at the power draw of the TP-Link plug and based on the measured power draw, shuts off the plug once the chargers power draw drops below the CUTOFF_POWER limit.
 ## Usage
-- Plug charger into device
+### Manual start, auto shutoff
+- Plug charger into device and smart plug
 - Turn on smart plug and verify charging is occurring
 - On any PC that supports command line Python 3.6.1 or above, run the shutoff_plug.py script with the name of the smart plug.
 - For example with a plug named test01:
 ```
 $ ./scripts/shutoff_plug.py test01
 ```
+### Auto start, auto shutoff
+- Plug charger into device and smart plug
+- On any PC that supports command line Python 3.6.1 or above, run the shutoff_plug.py script with the name of the smart plug and the "-a" switch
+- For example with a plug named test01:
+```
+$ ./scripts/shutoff_plug.py test01 -a
+```
+This will test the smart plug and if not on, start it.  After that it will do the same auto shutoff process when charging is complete.
 ## Sample Run
 ```
 $ ./scripts/shutoff_plug.py test01
