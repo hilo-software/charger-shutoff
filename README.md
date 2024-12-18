@@ -30,6 +30,12 @@ $ ./scripts/shutoff_plug.py test01
 $ ./scripts/shutoff_plug.py test01 -a
 ```
 This will test the smart plug and if not on, start it.  After that it will do the same auto shutoff process when charging is complete.
+### Customized cutoff power value
+- The default cutoff is 3.0 volts
+- If your target charging device has a different cutoff value you can override it here.
+```
+$ ./scripts/shutoff_plug.py test01 -c 2.5
+```
 ## Sample Run
 ```
 $ ./scripts/shutoff_plug.py test01

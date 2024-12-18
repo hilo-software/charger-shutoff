@@ -29,6 +29,7 @@ log_file = LOG_FILE
 logger = None
 plug: SmartDevice = None
 auto_on: bool = False
+cutoff_power = CUTOFF_POWER
 
 def fn_name():
     return inspect.currentframe().f_back.f_code.co_name
@@ -72,12 +73,15 @@ async def main_loop(target_plug: str) -> bool:
     if not plug_found:
         return False
     logger.info(f"plug: {target_plug}, power: {plug_found.emeter_realtime.power}")
-    while is_charging(plug_found):
-        await asyncio.sleep(PROBE_INTERVAL_SECS)
+    try:
+        while is_charging(plug_found):
+            await asyncio.sleep(PROBE_INTERVAL_SECS)
+            await plug_found.update()
+        await plug_found.turn_off()
         await plug_found.update()
-    await plug_found.turn_off()
-    await plug_found.update()
-    logger.info(f"plug is off: {plug_found.is_off}")
+        logger.info(f"plug is off: {plug_found.is_off}")
+    except Exception as e:
+        print(f'ERROR, unexpected exit from main_loop: {e}')
     return True
 
 def setup_logging_handlers(log_file: str) -> list:
@@ -141,13 +145,17 @@ def init_argparse() -> argparse.ArgumentParser:
         help='overrides logfile name, default is battery_plug_controller.log'
     )
     parser.add_argument(
+        '-c', '--cutoff_power', metavar='',
+        help='overrides CUTOFF_POWER, default is 3.0'
+    )
+    parser.add_argument(
         '-q', '--quiet_mode',
         action='store_true',
         help='reduces logging'
     )
     parser.add_argument(
         '-a', '--auto_on', action="store_true",
-        help='turn on plug at start is not yet on'
+        help='turn on plug at start if not yet on'
     )
     return parser
 
@@ -164,6 +172,14 @@ def main() -> None:
     # set auto_on if present
     if args.auto_on:
         auto_on = args.auto_on
+    if args.cutoff_power != None:
+        try:
+            cutoff_power = float(
+                args.cutoff_power)
+            logger.info(
+                f'>>>>> OVERRIDE cutoff_power: {str(cutoff_power)}')
+        except (ValueError, TypeError, OverflowError) as e:
+            logger.error(f'ERROR, Invalid nominal_charge_start_charge_threshold: {str(e)}')
 
     logger = init_logging(log_file)
 
