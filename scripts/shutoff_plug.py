@@ -64,9 +64,10 @@ def get_power(plug: SmartDevice) -> float:
     return plug.emeter_realtime.power
 
 def is_charging(plug: SmartDevice) -> bool:
+    global cutoff_power
     power: float = get_power(plug)
     logger.info(f"{fn_name()}: power: {power}")
-    return power > CUTOFF_POWER
+    return power > cutoff_power
 
 async def main_loop(target_plug: str) -> bool:
     plug_found: SmartDevice = await init(target_plug)
@@ -146,7 +147,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         '-c', '--cutoff_power', metavar='',
-        help='overrides CUTOFF_POWER, default is 3.0'
+        help='overrides cutoff_power, default is 3.0'
     )
     parser.add_argument(
         '-q', '--quiet_mode',
@@ -161,7 +162,7 @@ def init_argparse() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    global log_file, logger, auto_on
+    global log_file, logger, auto_on, cutoff_power
 
     parser = init_argparse()
     args = parser.parse_args()
@@ -176,10 +177,10 @@ def main() -> None:
         try:
             cutoff_power = float(
                 args.cutoff_power)
-            logger.info(
+            print(
                 f'>>>>> OVERRIDE cutoff_power: {str(cutoff_power)}')
         except (ValueError, TypeError, OverflowError) as e:
-            logger.error(f'ERROR, Invalid nominal_charge_start_charge_threshold: {str(e)}')
+            print(f'ERROR, Invalid cutoff_power: {str(e)}')
 
     logger = init_logging(log_file)
 
