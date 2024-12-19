@@ -82,7 +82,7 @@ async def main_loop(target_plug: str) -> bool:
         await plug_found.update()
         logger.info(f"plug is off: {plug_found.is_off}")
     except Exception as e:
-        print(f'ERROR, unexpected exit from main_loop: {e}')
+        logger.error(f'ERROR, unexpected exit from main_loop: {e}')
     return True
 
 def setup_logging_handlers(log_file: str) -> list:
