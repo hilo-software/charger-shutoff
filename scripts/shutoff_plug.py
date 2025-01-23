@@ -24,6 +24,8 @@ LOG_FILE = "shutoff_plug.log"
 CUTOFF_POWER = 3.0
 PROBE_INTERVAL_SECS = 5 * 60
 PLUG_SETTLE_TIME_SECS = 10
+RETRY_MAX = 3
+RETRY_SLEEP_DELAY = 30
 
 log_file = LOG_FILE
 logger = None
@@ -74,16 +76,23 @@ async def main_loop(target_plug: str) -> bool:
     if not plug_found:
         return False
     logger.info(f"plug: {target_plug}, power: {plug_found.emeter_realtime.power}")
-    try:
-        while is_charging(plug_found):
-            await asyncio.sleep(PROBE_INTERVAL_SECS)
+    retry_ct = 0
+    normal_finish = False
+    while not normal_finish and retry_ct < RETRY_MAX:
+        try:
+            while is_charging(plug_found):
+                await asyncio.sleep(PROBE_INTERVAL_SECS)
+                await plug_found.update()
+            await plug_found.turn_off()
             await plug_found.update()
-        await plug_found.turn_off()
-        await plug_found.update()
-        logger.info(f"plug is off: {plug_found.is_off}")
-    except Exception as e:
-        logger.error(f'ERROR, unexpected exit from main_loop: {e}')
-    return True
+            normal_finish = True
+            logger.info(f"plug is off: {plug_found.is_off}")
+        except Exception as e:
+            # Treat this as a network issue, retry after sleep up to RETRY_MAX attempts
+            retry_ct = retry_ct + 1
+            logger.error(f'ERROR, unexpected exit from main_loop: {e}, retry_ct: {retry_ct}')
+            await asyncio.sleep(RETRY_SLEEP_DELAY)
+    return normal_finish
 
 def setup_logging_handlers(log_file: str) -> list:
     try:
